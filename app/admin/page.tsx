@@ -27,7 +27,7 @@ export default async function AdminPage() {
   // Get all students
   const { data: students } = await supabase
     .from("profiles")
-    .select("*")
+    .select("id, email, full_name, role, student_id, created_at")
     .eq("role", "student")
     .order("created_at", { ascending: false })
 
@@ -52,14 +52,21 @@ export default async function AdminPage() {
   // Get enrollment statistics
   const { data: enrollments } = await supabase.from("enrollments").select("*")
 
+  // Ensure we have valid data arrays
+  const validCourses = courses || []
+  const validStudents = students || []
+  const validActivities = activities || []
+  const validAttendanceStats = attendanceStats || []
+  const validEnrollments = enrollments || []
+
   return (
     <AdminDashboard
       profile={profile}
-      courses={courses || []}
-      students={students || []}
-      activities={activities || []}
-      attendanceStats={attendanceStats || []}
-      enrollments={enrollments || []}
+      courses={validCourses}
+      students={validStudents}
+      activities={validActivities}
+      attendanceStats={validAttendanceStats}
+      enrollments={validEnrollments}
     />
   )
 }

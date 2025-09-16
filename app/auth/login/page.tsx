@@ -1,6 +1,7 @@
 "use client"
 
 import type React from "react"
+import { useEffect } from "react"
 
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
@@ -19,11 +20,31 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
 
+  // Check if user is already logged in
+  useEffect(() => {
+    const checkUser = async () => {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      
+      if (user) {
+        const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single()
+        if (profile?.role === "admin") {
+          router.push("/admin")
+        } else {
+          router.push("/student")
+        }
+      }
+    }
+    
+    checkUser()
+  }, [router])
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
-    const supabase = createClient()
     setIsLoading(true)
     setError(null)
+
+    const supabase = createClient()
 
     try {
       const { error } = await supabase.auth.signInWithPassword({
@@ -36,6 +57,7 @@ export default function LoginPage() {
       const {
         data: { user },
       } = await supabase.auth.getUser()
+      
       if (user) {
         const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single()
 
@@ -44,9 +66,12 @@ export default function LoginPage() {
         } else {
           router.push("/student")
         }
+      } else {
+        throw new Error("Failed to get user information")
       }
     } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : "An error occurred")
+      console.error("Login error:", error)
+      setError(error instanceof Error ? error.message : "An unexpected error occurred")
     } finally {
       setIsLoading(false)
     }

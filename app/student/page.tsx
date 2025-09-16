@@ -39,21 +39,27 @@ export default async function StudentPage() {
 
   // Get upcoming activities for enrolled courses
   const courseIds = enrollments?.map((e) => e.course_id) || []
-  const { data: activities } = await supabase
-    .from("activities")
-    .select(
-      `
-      *,
-      courses (
-        name,
-        code
+  
+  let activities = []
+  if (courseIds.length > 0) {
+    const { data: activitiesData } = await supabase
+      .from("activities")
+      .select(
+        `
+        *,
+        courses (
+          name,
+          code
+        )
+      `,
       )
-    `,
-    )
-    .in("course_id", courseIds)
-    .gte("scheduled_date", new Date().toISOString())
-    .order("scheduled_date", { ascending: true })
-    .limit(10)
+      .in("course_id", courseIds)
+      .gte("scheduled_date", new Date().toISOString())
+      .order("scheduled_date", { ascending: true })
+      .limit(10)
+    
+    activities = activitiesData || []
+  }
 
   // Get recent attendance records
   const { data: attendance } = await supabase
@@ -76,12 +82,17 @@ export default async function StudentPage() {
     .order("created_at", { ascending: false })
     .limit(10)
 
+  // Ensure we have valid data arrays
+  const validEnrollments = enrollments || []
+  const validActivities = activities || []
+  const validAttendance = attendance || []
+
   return (
     <StudentDashboard
       profile={profile}
-      enrollments={enrollments || []}
-      activities={activities || []}
-      attendance={attendance || []}
+      enrollments={validEnrollments}
+      activities={validActivities}
+      attendance={validAttendance}
     />
   )
 }

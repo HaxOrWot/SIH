@@ -133,6 +133,14 @@ export function StudentDashboard({ profile, enrollments, activities, attendance 
 
   const attendanceRate = attendanceStats.total > 0 ? (attendanceStats.present / attendanceStats.total) * 100 : 0
 
+  // Calculate this week's activities
+  const thisWeekActivities = activities.filter((activity) => {
+    const activityDate = new Date(activity.scheduled_date)
+    const now = new Date()
+    const weekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
+    return activityDate >= now && activityDate <= weekFromNow
+  }).length
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -235,10 +243,7 @@ export function StudentDashboard({ profile, enrollments, activities, attendance 
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {
-                  activities.filter((a) => new Date(a.scheduled_date) <= new Date(Date.now() + 7 * 24 * 60 * 60 * 1000))
-                    .length
-                }
+                {thisWeekActivities}
               </div>
               <p className="text-xs text-muted-foreground">Activities this week</p>
             </CardContent>

@@ -1,3 +1,22 @@
+/*
+  # Initial Database Schema Setup
+
+  1. New Tables
+    - `profiles` - User profile information with roles
+    - `courses` - Course management
+    - `activities` - Curriculum activities
+    - `attendance` - Attendance tracking
+    - `enrollments` - Course enrollments
+
+  2. Security
+    - Enable RLS on all tables
+    - Add policies for role-based access control
+    - Create trigger for automatic profile creation
+
+  3. Sample Data
+    - Add sample courses and activities for testing
+*/
+
 -- Create user profiles table
 CREATE TABLE IF NOT EXISTS public.profiles (
   id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -77,6 +96,14 @@ CREATE POLICY "Admins can view all profiles" ON public.profiles
     )
   );
 
+CREATE POLICY "Admins can insert profiles" ON public.profiles
+  FOR INSERT WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM public.profiles 
+      WHERE id = auth.uid() AND role = 'admin'
+    )
+  );
+
 -- RLS Policies for courses
 CREATE POLICY "Everyone can view courses" ON public.courses
   FOR SELECT USING (true);
@@ -149,3 +176,65 @@ CREATE POLICY "Admins can manage enrollments" ON public.enrollments
       WHERE id = auth.uid() AND role = 'admin'
     )
   );
+
+-- Function to handle new user registration
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  INSERT INTO public.profiles (id, email, full_name, role, student_id)
+  VALUES (
+    NEW.id,
+    NEW.email,
+    COALESCE(NEW.raw_user_meta_data ->> 'full_name', ''),
+    COALESCE(NEW.raw_user_meta_data ->> 'role', 'student'),
+    NEW.raw_user_meta_data ->> 'student_id'
+  );
+  
+  RETURN NEW;
+END;
+$$;
+
+-- Trigger to automatically create profile on user signup
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW
+  EXECUTE FUNCTION public.handle_new_user();
+
+-- Insert sample data for testing
+INSERT INTO public.courses (name, code, description) VALUES
+  ('Introduction to Computer Science', 'CS101', 'Basic concepts of computer science and programming'),
+  ('Data Structures and Algorithms', 'CS201', 'Fundamental data structures and algorithmic techniques'),
+  ('Database Systems', 'CS301', 'Design and implementation of database systems'),
+  ('Web Development', 'CS350', 'Modern web development technologies and frameworks')
+ON CONFLICT (code) DO NOTHING;
+
+-- Insert sample activities
+DO $$
+DECLARE
+  cs101_id UUID;
+  cs201_id UUID;
+  cs301_id UUID;
+  cs350_id UUID;
+BEGIN
+  SELECT id INTO cs101_id FROM public.courses WHERE code = 'CS101';
+  SELECT id INTO cs201_id FROM public.courses WHERE code = 'CS201';
+  SELECT id INTO cs301_id FROM public.courses WHERE code = 'CS301';
+  SELECT id INTO cs350_id FROM public.courses WHERE code = 'CS350';
+
+  INSERT INTO public.activities (course_id, title, description, activity_type, scheduled_date, duration_minutes) VALUES
+    (cs101_id, 'Introduction to Programming', 'Basic programming concepts and syntax', 'lecture', NOW() + INTERVAL '1 day', 90),
+    (cs101_id, 'Programming Lab 1', 'Hands-on programming exercises', 'lab', NOW() + INTERVAL '2 days', 120),
+    (cs201_id, 'Arrays and Linked Lists', 'Understanding linear data structures', 'lecture', NOW() + INTERVAL '3 days', 90),
+    (cs201_id, 'Algorithm Analysis Assignment', 'Analyze time complexity of algorithms', 'assignment', NOW() + INTERVAL '1 week', 0),
+    (cs301_id, 'Database Design Principles', 'Entity-relationship modeling', 'lecture', NOW() + INTERVAL '4 days', 90),
+    (cs350_id, 'HTML and CSS Basics', 'Introduction to web markup and styling', 'lecture', NOW() + INTERVAL '5 days', 90),
+    (cs350_id, 'JavaScript Fundamentals', 'Client-side scripting basics', 'lecture', NOW() + INTERVAL '6 days', 90),
+    (cs101_id, 'Midterm Exam', 'Comprehensive exam covering first half of course', 'exam', NOW() + INTERVAL '2 weeks', 120)
+  ON CONFLICT DO NOTHING;
+END $$;

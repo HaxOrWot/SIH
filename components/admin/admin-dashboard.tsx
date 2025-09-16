@@ -51,6 +51,7 @@ interface Profile {
   full_name: string
   role: string
   student_id?: string
+  created_at?: string
 }
 
 interface Course {
@@ -154,6 +155,20 @@ export function AdminDashboard({
 
   const overallAttendanceRate =
     attendanceStatistics.total > 0 ? (attendanceStatistics.present / attendanceStatistics.total) * 100 : 0
+
+  const handleCreateCourse = async (e: React.FormEvent) => {
+    e.preventDefault()
+    // TODO: Implement course creation
+    console.log("Create course functionality to be implemented")
+    setIsCreateCourseOpen(false)
+  }
+
+  const handleCreateActivity = async (e: React.FormEvent) => {
+    e.preventDefault()
+    // TODO: Implement activity creation
+    console.log("Create activity functionality to be implemented")
+    setIsCreateActivityOpen(false)
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -372,7 +387,7 @@ export function AdminDashboard({
                     <DialogTitle>Create New Course</DialogTitle>
                     <DialogDescription>Add a new course to the curriculum.</DialogDescription>
                   </DialogHeader>
-                  <div className="space-y-4">
+                  <form onSubmit={handleCreateCourse} className="space-y-4">
                     <div>
                       <Label htmlFor="courseName">Course Name</Label>
                       <Input id="courseName" placeholder="Introduction to Computer Science" />
@@ -385,8 +400,8 @@ export function AdminDashboard({
                       <Label htmlFor="courseDescription">Description</Label>
                       <Textarea id="courseDescription" placeholder="Course description..." />
                     </div>
-                    <Button className="w-full">Create Course</Button>
-                  </div>
+                    <Button type="submit" className="w-full">Create Course</Button>
+                  </form>
                 </DialogContent>
               </Dialog>
             </div>
@@ -446,7 +461,7 @@ export function AdminDashboard({
                         <TableCell className="font-medium">{student.student_id || "N/A"}</TableCell>
                         <TableCell>{student.full_name}</TableCell>
                         <TableCell>{student.email}</TableCell>
-                        <TableCell>{format(new Date(student.created_at || ""), "MMM dd, yyyy")}</TableCell>
+                        <TableCell>{student.created_at ? format(new Date(student.created_at), "MMM dd, yyyy") : "N/A"}</TableCell>
                         <TableCell>
                           <Button variant="outline" size="sm">
                             View
@@ -475,7 +490,7 @@ export function AdminDashboard({
                     <DialogTitle>Create New Activity</DialogTitle>
                     <DialogDescription>Schedule a new curriculum activity.</DialogDescription>
                   </DialogHeader>
-                  <div className="space-y-4">
+                  <form onSubmit={handleCreateActivity} className="space-y-4">
                     <div>
                       <Label htmlFor="activityTitle">Activity Title</Label>
                       <Input id="activityTitle" placeholder="Lecture: Introduction to Algorithms" />
@@ -518,8 +533,8 @@ export function AdminDashboard({
                       <Label htmlFor="activityDuration">Duration (minutes)</Label>
                       <Input id="activityDuration" type="number" placeholder="90" />
                     </div>
-                    <Button className="w-full">Create Activity</Button>
-                  </div>
+                    <Button type="submit" className="w-full">Create Activity</Button>
+                  </form>
                 </DialogContent>
               </Dialog>
             </div>
