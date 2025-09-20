@@ -70,7 +70,7 @@ export default function LandingPage() {
           <div className="mt-12 flex items-center justify-center space-x-8 text-sm text-gray-500">
             <div className="flex items-center">
               <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-              Free 30-day trial
+              100% Free Application
             </div>
             <div className="flex items-center">
               <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
@@ -350,3 +350,5 @@ export default function LandingPage() {
     </div>
   )
 }
+
+

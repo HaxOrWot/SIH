@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-import { useEffect } from "react"
 
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
@@ -25,27 +24,9 @@ export default function SignUpPage() {
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
 
-  // Check if user is already logged in
-  useEffect(() => {
-    const checkUser = async () => {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      
-      if (user) {
-        const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single()
-        if (profile?.role === "admin") {
-          router.push("/admin")
-        } else {
-          router.push("/student")
-        }
-      }
-    }
-    
-    checkUser()
-  }, [router])
-
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault()
+    const supabase = createClient()
     setIsLoading(true)
     setError(null)
 
@@ -61,20 +42,13 @@ export default function SignUpPage() {
       return
     }
 
-    if (role === "student" && !studentId.trim()) {
-      setError("Student ID is required for student accounts")
-      setIsLoading(false)
-      return
-    }
-
-    const supabase = createClient()
-
     try {
       const { error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/success`,
+          emailRedirectTo:
+            process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL || `${window.location.origin}/auth/success`,
           data: {
             full_name: fullName,
             role: role,
@@ -83,11 +57,9 @@ export default function SignUpPage() {
         },
       })
       if (error) throw error
-      
       router.push("/auth/success")
     } catch (error: unknown) {
-      console.error("Signup error:", error)
-      setError(error instanceof Error ? error.message : "An unexpected error occurred")
+      setError(error instanceof Error ? error.message : "An error occurred")
     } finally {
       setIsLoading(false)
     }
